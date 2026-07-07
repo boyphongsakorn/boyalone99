@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nightshift — live on Twitch</title>
+<title>BoyAlone99 — live on Twitch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -226,6 +226,15 @@
   .stream-meta .game{ font-size:13px; color:var(--text-dim); }
   .stream-meta .game strong{ color:var(--signal); font-weight:500; }
 
+  .offline-shell{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:8px; text-align:center; padding:24px;
+    background:var(--surface);
+  }
+  .offline-shell i{ font-size:28px; color:var(--text-faint); }
+  .offline-shell .offline-title{ font-size:16px; font-weight:500; }
+  .offline-shell .offline-sub{ font-size:13px; color:var(--text-dim); max-width:36ch; }
+
   .offline-note{
     font-family:var(--font-mono);
     font-size:12px;
@@ -364,7 +373,7 @@
 <header>
   <div class="wrap">
     <nav>
-      <div class="logo"><span class="dot"></span>nightshift</div>
+      <div class="logo"><span class="dot"></span>BoyAlone99</div>
       <div class="nav-links">
         <a href="#live">Live</a>
         <a href="#premieres">Premieres</a>
@@ -372,7 +381,7 @@
         <a href="#about">About</a>
       </div>
       <div class="nav-cta">
-        <a class="btn btn-twitch" href="https://twitch.tv/boyalone99" target="_blank" rel="noopener">Follow on Twitch</a>
+        <a class="btn btn-twitch" href="https://twitch.tv/BoyAlone99" target="_blank" rel="noopener">Follow on Twitch</a>
         <button class="menu-toggle" aria-label="Menu">&#9776;</button>
       </div>
     </nav>
@@ -385,13 +394,13 @@
     <div class="wrap">
       <div class="hero-head">
         <div>
-          <span class="live-badge"><span class="pulse"></span>live now</span>
-          <h1>Streaming live right now</h1>
-          <p class="hero-sub">Ranked grind, community lobbies, and the occasional chaos clip. Drop in and say hi in chat.</p>
+          <span class="live-badge" id="live-badge"><span class="pulse"></span>live now</span>
+          <h1 id="hero-title">Streaming live right now</h1>
+          <p class="hero-sub" id="hero-sub">Ranked grind, community lobbies, and the occasional chaos clip. Drop in and say hi in chat.</p>
         </div>
       </div>
 
-      <div class="stream-frame">
+      <div class="stream-frame" id="stream-frame" style="display:none;">
         <div class="player-shell">
           <!--
             Replace CHANNEL below with your Twitch username.
@@ -400,7 +409,7 @@
             For local testing use parent=localhost.
           -->
           <iframe
-            src="https://player.twitch.tv/?channel=boyalone99&parent=shiny-space-chainsaw-g5vqr4ggqvcwwj4-5500.app.github.dev&muted=true"
+            src="https://player.twitch.tv/?channel=boyalone99&parent=localhost&muted=true"
             allowfullscreen>
           </iframe>
           <div class="player-overlay-tag">
@@ -412,9 +421,18 @@
             <p class="title">Ranked grind to diamond — road to top 500</p>
             <p class="game">Playing <strong>Valorant</strong> · started 1h 42m ago</p>
           </div>
-          <a class="btn btn-twitch" href="https://twitch.tv/boyalone99" target="_blank" rel="noopener">Watch on Twitch</a>
+          <a class="btn btn-twitch" href="https://twitch.tv/BoyAlone99" target="_blank" rel="noopener">Watch on Twitch</a>
         </div>
       </div>
+
+      <div class="stream-frame offline-panel" id="offline-panel" style="display:block;">
+        <div class="player-shell offline-shell">
+          <i class="ti ti-video-off"></i>
+          <p class="offline-title">Offline right now</p>
+          <p class="offline-sub">Check the schedule below or follow to get notified next time.</p>
+        </div>
+      </div>
+
       <p class="offline-note">// embed shows offline until parent domain is configured — see comment in source</p>
     </div>
   </section>
@@ -450,7 +468,7 @@
     <div class="wrap">
       <div class="section-head">
         <h2>Latest videos</h2>
-        <a class="see-all" href="https://youtube.com/@boyalone99gaming" target="_blank" rel="noopener">view channel</a>
+        <a class="see-all" href="https://youtube.com/@BoyAlone99Gaming" target="_blank" rel="noopener">view channel</a>
       </div>
       <div class="video-grid" id="video-grid"></div>
       <div class="load-more">
@@ -464,12 +482,12 @@
 <footer id="about">
   <div class="wrap">
     <div class="footer-row">
-      <div class="logo"><span class="dot"></span>nightshift</div>
+      <div class="logo"><span class="dot"></span>BoyAlone99</div>
       <div class="socials">
-        <a href="https://twitch.tv/yourchannel" target="_blank" rel="noopener" aria-label="Twitch"><i class="ti ti-brand-twitch"></i></a>
-        <a href="https://youtube.com/@yourchannel" target="_blank" rel="noopener" aria-label="YouTube"><i class="ti ti-brand-youtube"></i></a>
-        <a href="https://x.com/yourchannel" target="_blank" rel="noopener" aria-label="X"><i class="ti ti-brand-x"></i></a>
-        <a href="https://discord.gg/yourinvite" target="_blank" rel="noopener" aria-label="Discord"><i class="ti ti-brand-discord"></i></a>
+        <a href="https://twitch.tv/boyalone99" target="_blank" rel="noopener" aria-label="Twitch"><i class="ti ti-brand-twitch"></i></a>
+        <a href="https://youtube.com/@BoyAlone99Gaming" target="_blank" rel="noopener" aria-label="YouTube"><i class="ti ti-brand-youtube"></i></a>
+        <a href="https://x.com/boyalone99" target="_blank" rel="noopener" aria-label="X"><i class="ti ti-brand-x"></i></a>
+        <!-- <a href="https://discord.gg/boyalone99" target="_blank" rel="noopener" aria-label="Discord"><i class="ti ti-brand-discord"></i></a> -->
       </div>
     </div>
     <p class="footer-note">// edit VIDEOS array in the script tag near the bottom of index.html to add your own videos</p>
@@ -478,28 +496,89 @@
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
 <script>
-  // ---- Edit this list with your own video data ----
-  const VIDEOS = [
-    { title: "Insane clutch 1v4 — you won't believe this", views: "89k", when: "2 days ago", duration: "18:24", thumb: "", url: "https://youtube.com/@yourchannel" },
-    { title: "Full stream vod — chaotic lobby highlights", views: "34k", when: "4 days ago", duration: "42:10", thumb: "", url: "https://youtube.com/@yourchannel" },
-    { title: "Ranking every weapon tier list 2026", views: "120k", when: "1 week ago", duration: "9:47", thumb: "", url: "https://youtube.com/@yourchannel" },
-    { title: "Duo queue with subscribers — funny moments", views: "61k", when: "1 week ago", duration: "27:03", thumb: "", url: "https://youtube.com/@yourchannel" },
-    { title: "Setup tour and gear I actually use", views: "45k", when: "2 weeks ago", duration: "15:32", thumb: "", url: "https://youtube.com/@yourchannel" },
-    { title: "Reacting to my first ever video", views: "72k", when: "3 weeks ago", duration: "33:58", thumb: "", url: "https://youtube.com/@yourchannel" },
-    { title: "Why this patch changes everything", views: "58k", when: "3 weeks ago", duration: "12:11", thumb: "", url: "https://youtube.com/@yourchannel" },
-    { title: "Speedrunning the campaign on hardest mode", views: "97k", when: "1 month ago", duration: "51:20", thumb: "", url: "https://youtube.com/@yourchannel" },
-    { title: "Chat controls my loadout for 24 hours", views: "210k", when: "1 month ago", duration: "24:45", thumb: "", url: "https://youtube.com/@yourchannel" },
-  ];
+  // ============================================================
+  // CONFIG — fill these in
+  // ============================================================
+  const YT_API_KEY = "AIzaSyCKnojj634as24PXtBsL6KUGxEv53C4W4U";
+  const YT_UPLOADS_PLAYLIST_ID = "UUxxxxxxxxxxxxxxxxxxxxxx"; // your channel's UC id with UC -> UU
+  const TWITCH_STATUS_URL = "https://localpost.teamquadb.in.th/twitchstatus";
+  const PAGE_SIZE = 8;
+  const CHANNEL_ID = "UCqwscc-eaqaYeiy9hgrda8Q"
 
-  const PAGE_SIZE = 6;
-  let shown = 0;
+  // ============================================================
+  // Twitch live/offline check
+  // ============================================================
+  async function checkTwitchStatus(){
+    const streamFrame = document.getElementById('stream-frame');
+    const offlinePanel = document.getElementById('offline-panel');
+    const liveBadge = document.getElementById('live-badge');
+    const heroTitle = document.getElementById('hero-title');
+    const heroSub = document.getElementById('hero-sub');
+    const liveDiv = document.getElementById('live');
+
+    try {
+      const res = await fetch(TWITCH_STATUS_URL);
+      const status = (await res.text()).trim().toLowerCase();
+
+      if(status === "offline"){
+        streamFrame.style.display = 'none';
+        offlinePanel.style.display = 'block';
+        liveBadge.style.display = 'none';
+        heroTitle.textContent = "Not live right now";
+        heroSub.textContent = "Catch the next stream — follow on Twitch to get notified, or watch the latest videos below.";
+        liveDiv.style.display = 'none';
+      } else {
+        streamFrame.style.display = '';
+        offlinePanel.style.display = 'none';
+        liveBadge.style.display = '';
+        liveDiv.style.display = '';
+      }
+    } catch (err) {
+      streamFrame.style.display = 'none';
+      offlinePanel.style.display = 'block';
+      liveBadge.style.display = 'none';
+      liveDiv.style.display = 'none';
+      heroTitle.textContent = "Not live right now";
+      heroSub.textContent = "Catch the next stream — follow on Twitch to get notified, or watch the latest videos below.";
+      console.warn('Twitch status check failed:', err);
+    }
+  }
+
+  // ============================================================
+  // YouTube videos — real data via YouTube Data API v3
+  // ============================================================
+  let nextPageToken = "";
   const grid = document.getElementById('video-grid');
   const loadMoreBtn = document.getElementById('load-more-btn');
+
+  function formatViews(n){
+    if(n >= 1000000) return (n/1000000).toFixed(1).replace('.0','') + 'M';
+    if(n >= 1000) return Math.round(n/1000) + 'k';
+    return String(n);
+  }
+
+  function timeAgo(dateStr){
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const days = Math.floor(diff / 86400000);
+    if(days < 1) return "today";
+    if(days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
+    if(days < 30) return `${Math.floor(days/7)} week${Math.floor(days/7) > 1 ? 's' : ''} ago`;
+    return `${Math.floor(days/30)} month${Math.floor(days/30) > 1 ? 's' : ''} ago`;
+  }
+
+  function isoToClock(iso){
+    const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    if(!m) return "";
+    const h = m[1] ? m[1] + ':' : '';
+    const min = m[2] ? m[2].padStart(h ? 2 : 1, '0') : '0';
+    const s = (m[3] || '0').padStart(2, '0');
+    return `${h}${min}:${s}`;
+  }
 
   function renderVideoCard(v){
     const card = document.createElement('a');
     card.className = 'video-card';
-    card.href = v.url;
+    card.href = `https://youtube.com/watch?v=${v.id}`;
     card.target = '_blank';
     card.rel = 'noopener';
     const thumbInner = v.thumb
@@ -518,16 +597,62 @@
     return card;
   }
 
-  function loadNextPage(){
-    const next = VIDEOS.slice(shown, shown + PAGE_SIZE);
-    next.forEach(v => grid.appendChild(renderVideoCard(v)));
-    shown += next.length;
-    if(shown >= VIDEOS.length){
+  async function fetchVideoStats(videoIds){
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics,contentDetails&id=${videoIds.join(',')}&key=${YT_API_KEY}`);
+    const data = await res.json();
+    const map = {};
+    (data.items || []).forEach(item => {
+      map[item.id] = {
+        views: formatViews(Number(item.statistics.viewCount || 0)),
+        duration: isoToClock(item.contentDetails.duration)
+      };
+    });
+    return map;
+  }
+
+  async function loadNextPage(){
+    loadMoreBtn.textContent = "Loading…";
+    try {
+      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${CHANNEL_ID}&maxResults=${PAGE_SIZE}&order=date&type=video&pageToken=${nextPageToken}&key=${YT_API_KEY}`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if(!data.items || !data.items.length){
+        loadMoreBtn.style.display = 'none';
+        return;
+      }
+
+      const videoIds = data.items.map(item => item.id.videoId);
+      const statsMap = await fetchVideoStats(videoIds);
+
+      data.items.forEach(item => {
+        const id = item.id.videoId;
+        const stats = statsMap[id] || { views: '—', duration: '' };
+        grid.appendChild(renderVideoCard({
+          id,
+          title: item.snippet.title,
+          thumb: item.snippet.thumbnails.high.url,
+          views: stats.views,
+          when: timeAgo(item.snippet.publishedAt),
+          duration: stats.duration
+        }));
+      });
+
+      nextPageToken = data.nextPageToken || "";
+      if(!nextPageToken){
+        loadMoreBtn.style.display = 'none';
+      }
+    } catch (err) {
+      console.warn('YouTube fetch failed:', err);
+      grid.innerHTML = `<p style="color:var(--text-faint); font-size:13px; grid-column:1/-1;">Couldn't load videos — check the YT_API_KEY and YT_UPLOADS_PLAYLIST_ID in the script.</p>`;
       loadMoreBtn.style.display = 'none';
+    } finally {
+      loadMoreBtn.textContent = "Load more";
     }
   }
 
   loadMoreBtn.addEventListener('click', loadNextPage);
+  checkTwitchStatus();
   loadNextPage();
 </script>
 
