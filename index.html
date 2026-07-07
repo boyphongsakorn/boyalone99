@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nightshift — live on Twitch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F1116;
+    --surface:#171A22;
+    --surface-2:#1F2330;
+    --line: rgba(255,255,255,0.08);
+    --line-strong: rgba(255,255,255,0.16);
+    --text:#EDEFF3;
+    --text-dim:#9198A8;
+    --text-faint:#5B6070;
+    --signal:#3CDFFF;
+    --signal-dim: rgba(60,223,255,0.12);
+    --amber:#FFB84D;
+    --amber-dim: rgba(255,184,77,0.14);
+    --live:#FF4757;
+    --radius: 6px;
+    --font-display: 'Big Shoulders Display', sans-serif;
+    --font-body: 'Work Sans', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  img{max-width:100%; display:block;}
+  a{color:inherit; text-decoration:none;}
+  button{font-family:inherit; cursor:pointer;}
+
+  ::selection{ background:var(--signal); color:#03191C; }
+
+  .wrap{ max-width:1120px; margin:0 auto; padding:0 24px; }
+
+  /* ---------- ticker ---------- */
+  .ticker{
+    background:var(--surface-2);
+    border-bottom:1px solid var(--line);
+    overflow:hidden;
+    white-space:nowrap;
+    height:34px;
+    display:flex;
+    align-items:center;
+  }
+  .ticker-track{
+    display:inline-flex;
+    gap:48px;
+    animation: scroll-ticker 28s linear infinite;
+    padding-left:100%;
+  }
+  .ticker-track span{
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:0.03em;
+    color:var(--text-dim);
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+  }
+  .ticker-track span::before{
+    content:"";
+    width:5px; height:5px;
+    background:var(--signal);
+    display:inline-block;
+  }
+  @keyframes scroll-ticker{
+    0%{ transform:translateX(0); }
+    100%{ transform:translateX(-100%); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .ticker-track{ animation:none; padding-left:0; }
+  }
+
+  /* ---------- header ---------- */
+  header{
+    position:sticky; top:0; z-index:50;
+    background:rgba(15,17,22,0.92);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 0;
+  }
+  .logo{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:24px;
+    letter-spacing:0.01em;
+    display:flex; align-items:center; gap:10px;
+  }
+  .logo .dot{
+    width:10px; height:10px;
+    background:var(--live);
+    clip-path:polygon(0 0,100% 0,100% 100%,0 100%);
+    transform:rotate(45deg);
+    display:inline-block;
+  }
+  .nav-links{ display:flex; gap:32px; }
+  .nav-links a{
+    font-size:14px; color:var(--text-dim);
+    font-weight:500;
+    padding:6px 0;
+    border-bottom:1px solid transparent;
+    transition:color .15s, border-color .15s;
+  }
+  .nav-links a:hover, .nav-links a:focus-visible{ color:var(--text); border-color:var(--signal); }
+  .nav-cta{
+    display:flex; gap:12px; align-items:center;
+  }
+  .btn{
+    font-size:13px; font-weight:600;
+    padding:10px 18px;
+    border-radius:var(--radius);
+    border:1px solid var(--line-strong);
+    background:transparent;
+    color:var(--text);
+    transition:border-color .15s, background .15s, transform .1s;
+    display:inline-flex; align-items:center; gap:8px;
+  }
+  .btn:hover{ border-color:var(--signal); }
+  .btn:active{ transform:scale(0.98); }
+  .btn-primary{
+    background:var(--signal);
+    color:#03191C;
+    border:1px solid var(--signal);
+  }
+  .btn-primary:hover{ background:#5DE6FF; border-color:#5DE6FF; }
+  .btn-twitch{
+    background:#9146FF; border:1px solid #9146FF; color:#fff;
+  }
+  .btn-twitch:hover{ background:#a56bff; border-color:#a56bff; }
+
+  .menu-toggle{ display:none; background:none; border:none; color:var(--text); font-size:22px; }
+
+  /* ---------- hero / live section ---------- */
+  .hero{ padding:56px 0 40px; }
+  .hero-head{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    margin-bottom:20px; gap:24px; flex-wrap:wrap;
+  }
+  .live-badge{
+    display:inline-flex; align-items:center; gap:8px;
+    background:var(--live);
+    color:#fff;
+    font-family:var(--font-mono);
+    font-size:12px; font-weight:500;
+    padding:6px 12px 6px 10px;
+    border-radius:3px;
+    letter-spacing:0.04em;
+  }
+  .live-badge .pulse{
+    width:7px; height:7px; background:#fff; border-radius:50%;
+    animation:pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{ opacity:1; }
+    50%{ opacity:0.35; }
+  }
+  @media (prefers-reduced-motion: reduce){ .pulse{ animation:none; } }
+
+  .hero h1{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:clamp(32px, 5vw, 52px);
+    line-height:0.98;
+    letter-spacing:-0.01em;
+    margin:14px 0 6px;
+    max-width:14ch;
+  }
+  .hero-sub{ color:var(--text-dim); font-size:15px; max-width:46ch; }
+
+  .stream-frame{
+    position:relative;
+    background:var(--surface);
+    border:1px solid var(--line);
+    clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 28px, 100% 100%, 28px 100%, 0 calc(100% - 28px));
+  }
+  .stream-frame::before{
+    content:"";
+    position:absolute; inset:0;
+    border:1px solid var(--line-strong);
+    clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 28px, 100% 100%, 28px 100%, 0 calc(100% - 28px));
+    pointer-events:none;
+  }
+  .player-shell{
+    position:relative;
+    aspect-ratio:16/9;
+    background:#000;
+  }
+  .player-shell iframe{ width:100%; height:100%; border:0; }
+  .player-overlay-tag{
+    position:absolute; top:16px; left:16px;
+    display:flex; gap:8px;
+  }
+  .tag{
+    font-family:var(--font-mono);
+    font-size:11px;
+    padding:5px 9px;
+    border-radius:3px;
+    background:rgba(0,0,0,0.55);
+    color:#fff;
+    backdrop-filter:blur(4px);
+  }
+  .tag.viewers::before{ content:"◉ "; color:var(--live); }
+
+  .stream-meta{
+    display:flex; justify-content:space-between; align-items:center;
+    flex-wrap:wrap; gap:16px;
+    padding:18px 24px;
+    border-top:1px solid var(--line);
+  }
+  .stream-meta .title{ font-size:15px; font-weight:500; margin-bottom:4px; }
+  .stream-meta .game{ font-size:13px; color:var(--text-dim); }
+  .stream-meta .game strong{ color:var(--signal); font-weight:500; }
+
+  .offline-note{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--text-faint);
+    padding:14px 24px 0;
+  }
+
+  /* ---------- section headers ---------- */
+  .section{ padding:44px 0; border-top:1px solid var(--line); }
+  .section-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:24px; flex-wrap:wrap; gap:10px;
+  }
+  .section-head h2{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:26px;
+    display:flex; align-items:center; gap:12px;
+  }
+  .section-head h2::before{
+    content:"";
+    width:18px; height:3px;
+    background:var(--amber);
+    display:inline-block;
+  }
+  .section-head .see-all{
+    font-size:13px; color:var(--text-dim); font-family:var(--font-mono);
+  }
+  .section-head .see-all:hover{ color:var(--signal); }
+
+  /* ---------- premieres row ---------- */
+  .premiere-row{
+    display:flex; gap:14px; overflow-x:auto; padding-bottom:6px;
+    scrollbar-width:thin;
+  }
+  .premiere-card{
+    flex:0 0 240px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    overflow:hidden;
+    transition:border-color .15s;
+  }
+  .premiere-card:hover{ border-color:var(--line-strong); }
+  .premiere-thumb{
+    aspect-ratio:16/9;
+    background:var(--surface-2);
+    position:relative;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .premiere-thumb i{ font-size:22px; color:var(--text-faint); }
+  .premiere-when{
+    position:absolute; top:8px; left:8px;
+    font-family:var(--font-mono); font-size:11px;
+    background:var(--amber-dim); color:var(--amber);
+    padding:3px 8px; border-radius:3px;
+  }
+  .premiere-card .info{ padding:12px 14px 14px; }
+  .premiere-card .info p{ font-size:13px; font-weight:500; }
+
+  /* ---------- video grid ---------- */
+  .video-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));
+    gap:20px 18px;
+  }
+  .video-card{ cursor:pointer; }
+  .video-thumb{
+    aspect-ratio:16/9;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    position:relative;
+    overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+    transition:border-color .15s;
+  }
+  .video-card:hover .video-thumb{ border-color:var(--signal); }
+  .video-thumb img{ width:100%; height:100%; object-fit:cover; position:absolute; inset:0; }
+  .video-thumb i{ font-size:20px; color:var(--text-faint); z-index:1; }
+  .video-dur{
+    position:absolute; bottom:7px; right:7px;
+    font-family:var(--font-mono); font-size:11px;
+    background:rgba(0,0,0,0.75); color:#fff;
+    padding:2px 6px; border-radius:3px;
+    z-index:1;
+  }
+  .video-card .info{ padding-top:10px; }
+  .video-card .info p.title{ font-size:14px; font-weight:500; margin-bottom:4px; }
+  .video-card .info p.meta{ font-size:12px; color:var(--text-faint); font-family:var(--font-mono); }
+
+  .load-more{
+    display:flex; justify-content:center; margin-top:32px;
+  }
+
+  /* ---------- footer ---------- */
+  footer{
+    border-top:1px solid var(--line);
+    padding:32px 0 40px;
+  }
+  .footer-row{
+    display:flex; justify-content:space-between; align-items:center;
+    flex-wrap:wrap; gap:16px;
+  }
+  .footer-row .logo{ font-size:18px; }
+  .socials{ display:flex; gap:18px; }
+  .socials a{ color:var(--text-dim); font-size:20px; transition:color .15s; }
+  .socials a:hover{ color:var(--signal); }
+  .footer-note{
+    font-family:var(--font-mono); font-size:11px; color:var(--text-faint);
+    margin-top:20px;
+  }
+
+  @media (max-width:720px){
+    .nav-links{ display:none; }
+    .menu-toggle{ display:block; }
+    .stream-meta{ flex-direction:column; align-items:flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    <span>live now — ranked grind to diamond</span>
+    <span>new video every tuesday and friday</span>
+    <span>next premiere in 2 hours</span>
+    <span>community tournament this saturday</span>
+    <span>live now — ranked grind to diamond</span>
+    <span>new video every tuesday and friday</span>
+    <span>next premiere in 2 hours</span>
+    <span>community tournament this saturday</span>
+  </div>
+</div>
+
+<header>
+  <div class="wrap">
+    <nav>
+      <div class="logo"><span class="dot"></span>nightshift</div>
+      <div class="nav-links">
+        <a href="#live">Live</a>
+        <a href="#premieres">Premieres</a>
+        <a href="#videos">Videos</a>
+        <a href="#about">About</a>
+      </div>
+      <div class="nav-cta">
+        <a class="btn btn-twitch" href="https://twitch.tv/yourchannel" target="_blank" rel="noopener">Follow on Twitch</a>
+        <button class="menu-toggle" aria-label="Menu">&#9776;</button>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <section class="hero" id="live">
+    <div class="wrap">
+      <div class="hero-head">
+        <div>
+          <span class="live-badge"><span class="pulse"></span>live now</span>
+          <h1>Streaming live right now</h1>
+          <p class="hero-sub">Ranked grind, community lobbies, and the occasional chaos clip. Drop in and say hi in chat.</p>
+        </div>
+      </div>
+
+      <div class="stream-frame">
+        <div class="player-shell">
+          <!--
+            Replace CHANNEL below with your Twitch username.
+            The "parent" param must match the domain this page is served from
+            (e.g. parent=yourdomain.com). Add one parent param per domain you host on.
+            For local testing use parent=localhost.
+          -->
+          <iframe
+            src="https://player.twitch.tv/?channel=yourchannel&parent=localhost&muted=true"
+            allowfullscreen>
+          </iframe>
+          <div class="player-overlay-tag">
+            <span class="tag viewers">2,341 watching</span>
+          </div>
+        </div>
+        <div class="stream-meta">
+          <div>
+            <p class="title">Ranked grind to diamond — road to top 500</p>
+            <p class="game">Playing <strong>Valorant</strong> · started 1h 42m ago</p>
+          </div>
+          <a class="btn btn-twitch" href="https://twitch.tv/yourchannel" target="_blank" rel="noopener">Watch on Twitch</a>
+        </div>
+      </div>
+      <p class="offline-note">// embed shows offline until parent domain is configured — see comment in source</p>
+    </div>
+  </section>
+
+  <section class="section" id="premieres">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Upcoming premieres</h2>
+        <a class="see-all" href="#">full schedule</a>
+      </div>
+      <div class="premiere-row">
+        <div class="premiere-card">
+          <div class="premiere-thumb"><i class="ti ti-player-play"></i><span class="premiere-when">in 2h</span></div>
+          <div class="info"><p>New season trailer reaction</p></div>
+        </div>
+        <div class="premiere-card">
+          <div class="premiere-thumb"><i class="ti ti-player-play"></i><span class="premiere-when">tomorrow 6pm</span></div>
+          <div class="info"><p>1v1 vs top ranked player</p></div>
+        </div>
+        <div class="premiere-card">
+          <div class="premiere-thumb"><i class="ti ti-player-play"></i><span class="premiere-when">fri 8pm</span></div>
+          <div class="info"><p>Community tournament finals</p></div>
+        </div>
+        <div class="premiere-card">
+          <div class="premiere-thumb"><i class="ti ti-player-play"></i><span class="premiere-when">sat 4pm</span></div>
+          <div class="info"><p>Setup rebuild — full teardown</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="videos">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Latest videos</h2>
+        <a class="see-all" href="https://youtube.com/@yourchannel" target="_blank" rel="noopener">view channel</a>
+      </div>
+      <div class="video-grid" id="video-grid"></div>
+      <div class="load-more">
+        <button class="btn" id="load-more-btn">Load more</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer id="about">
+  <div class="wrap">
+    <div class="footer-row">
+      <div class="logo"><span class="dot"></span>nightshift</div>
+      <div class="socials">
+        <a href="https://twitch.tv/yourchannel" target="_blank" rel="noopener" aria-label="Twitch"><i class="ti ti-brand-twitch"></i></a>
+        <a href="https://youtube.com/@yourchannel" target="_blank" rel="noopener" aria-label="YouTube"><i class="ti ti-brand-youtube"></i></a>
+        <a href="https://x.com/yourchannel" target="_blank" rel="noopener" aria-label="X"><i class="ti ti-brand-x"></i></a>
+        <a href="https://discord.gg/yourinvite" target="_blank" rel="noopener" aria-label="Discord"><i class="ti ti-brand-discord"></i></a>
+      </div>
+    </div>
+    <p class="footer-note">// edit VIDEOS array in the script tag near the bottom of index.html to add your own videos</p>
+  </div>
+</footer>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<script>
+  // ---- Edit this list with your own video data ----
+  const VIDEOS = [
+    { title: "Insane clutch 1v4 — you won't believe this", views: "89k", when: "2 days ago", duration: "18:24", thumb: "", url: "https://youtube.com/@yourchannel" },
+    { title: "Full stream vod — chaotic lobby highlights", views: "34k", when: "4 days ago", duration: "42:10", thumb: "", url: "https://youtube.com/@yourchannel" },
+    { title: "Ranking every weapon tier list 2026", views: "120k", when: "1 week ago", duration: "9:47", thumb: "", url: "https://youtube.com/@yourchannel" },
+    { title: "Duo queue with subscribers — funny moments", views: "61k", when: "1 week ago", duration: "27:03", thumb: "", url: "https://youtube.com/@yourchannel" },
+    { title: "Setup tour and gear I actually use", views: "45k", when: "2 weeks ago", duration: "15:32", thumb: "", url: "https://youtube.com/@yourchannel" },
+    { title: "Reacting to my first ever video", views: "72k", when: "3 weeks ago", duration: "33:58", thumb: "", url: "https://youtube.com/@yourchannel" },
+    { title: "Why this patch changes everything", views: "58k", when: "3 weeks ago", duration: "12:11", thumb: "", url: "https://youtube.com/@yourchannel" },
+    { title: "Speedrunning the campaign on hardest mode", views: "97k", when: "1 month ago", duration: "51:20", thumb: "", url: "https://youtube.com/@yourchannel" },
+    { title: "Chat controls my loadout for 24 hours", views: "210k", when: "1 month ago", duration: "24:45", thumb: "", url: "https://youtube.com/@yourchannel" },
+  ];
+
+  const PAGE_SIZE = 6;
+  let shown = 0;
+  const grid = document.getElementById('video-grid');
+  const loadMoreBtn = document.getElementById('load-more-btn');
+
+  function renderVideoCard(v){
+    const card = document.createElement('a');
+    card.className = 'video-card';
+    card.href = v.url;
+    card.target = '_blank';
+    card.rel = 'noopener';
+    const thumbInner = v.thumb
+      ? `<img src="${v.thumb}" alt="">`
+      : `<i class="ti ti-player-play"></i>`;
+    card.innerHTML = `
+      <div class="video-thumb">
+        ${thumbInner}
+        <span class="video-dur">${v.duration}</span>
+      </div>
+      <div class="info">
+        <p class="title">${v.title}</p>
+        <p class="meta">${v.views} views · ${v.when}</p>
+      </div>
+    `;
+    return card;
+  }
+
+  function loadNextPage(){
+    const next = VIDEOS.slice(shown, shown + PAGE_SIZE);
+    next.forEach(v => grid.appendChild(renderVideoCard(v)));
+    shown += next.length;
+    if(shown >= VIDEOS.length){
+      loadMoreBtn.style.display = 'none';
+    }
+  }
+
+  loadMoreBtn.addEventListener('click', loadNextPage);
+  loadNextPage();
+</script>
+
+</body>
+</html>
