@@ -376,6 +376,7 @@
       <div class="logo"><span class="dot"></span>BoyAlone99</div>
       <div class="nav-links">
         <a href="#live">Live</a>
+        <a href="#previous-live">Previous Live</a>
         <a href="#premieres">Premieres</a>
         <a href="#videos">Videos</a>
         <a href="#about">About</a>
@@ -434,6 +435,16 @@
       </div>
 
       <p class="offline-note">// embed shows offline until parent domain is configured — see comment in source</p>
+    </div>
+  </section>
+
+  <section class="section" id="previous-live">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Previous Live</h2>
+        <a class="see-all" href="https://twitch.tv/BoyAlone99" target="_blank" rel="noopener">watch archive</a>
+      </div>
+      <div class="video-grid" id="previous-live-grid"></div>
     </div>
   </section>
 
@@ -548,8 +559,10 @@
   // YouTube videos — real data via YouTube Data API v3
   // ============================================================
   let nextPageToken = "";
+  const previousLiveGrid = document.getElementById('previous-live-grid');
   const grid = document.getElementById('video-grid');
   const loadMoreBtn = document.getElementById('load-more-btn');
+  let previousLiveCount = 0;
 
   function formatViews(n){
     if(n >= 1000000) return (n/1000000).toFixed(1).replace('.0','') + 'M';
@@ -628,7 +641,12 @@
       data.items.forEach(item => {
         const id = item.id.videoId;
         const stats = statsMap[id] || { views: '—', duration: '' };
-        grid.appendChild(renderVideoCard({
+        const fillPreviousLive = previousLiveCount < 4;
+        if (fillPreviousLive) {
+          previousLiveCount += 1;
+        }
+        const targetGrid = fillPreviousLive ? previousLiveGrid : grid;
+        targetGrid.appendChild(renderVideoCard({
           id,
           title: item.snippet.title,
           thumb: item.snippet.thumbnails.high.url,
