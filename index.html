@@ -563,6 +563,8 @@
   const grid = document.getElementById('video-grid');
   const loadMoreBtn = document.getElementById('load-more-btn');
   let previousLiveCount = 0;
+  let latestVideoCount = 0;
+  let latestVideoTarget = 8;
 
   function formatViews(n){
     if(n >= 1000000) return (n/1000000).toFixed(1).replace('.0','') + 'M';
@@ -611,13 +613,14 @@
   }
 
   async function fetchVideoStats(videoIds){
-    const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics,contentDetails&id=${videoIds.join(',')}&key=${YT_API_KEY}`);
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics,contentDetails,liveStreamingDetails,status&id=${videoIds.join(',')}&key=${YT_API_KEY}`);
     const data = await res.json();
     const map = {};
     (data.items || []).forEach(item => {
       map[item.id] = {
         views: formatViews(Number(item.statistics.viewCount || 0)),
-        duration: isoToClock(item.contentDetails.duration)
+        duration: isoToClock(item.contentDetails.duration),
+        hasLiveStreamingDetails: !!(item.liveStreamingDetails && Object.keys(item.liveStreamingDetails).length > 0)
       };
     });
     return map;
@@ -626,37 +629,55 @@
   async function loadNextPage(){
     loadMoreBtn.textContent = "Loading…";
     try {
-      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${CHANNEL_ID}&maxResults=${PAGE_SIZE}&order=date&type=video&pageToken=${nextPageToken}&key=${YT_API_KEY}`;
+      while (latestVideoCount < latestVideoTarget && nextPageToken !== null) {
+        const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${YT_UPLOADS_PLAYLIST_ID}&maxResults=${PAGE_SIZE}&pageToken=${nextPageToken}&key=${YT_API_KEY}`;
       const res = await fetch(url);
       const data = await res.json();
 
       if(!data.items || !data.items.length){
-        loadMoreBtn.style.display = 'none';
-        return;
+          nextPageToken = null;
+          break;
       }
 
-      const videoIds = data.items.map(item => item.id.videoId);
+        const videoIds = data.items.map(item => item.contentDetails.videoId);
       const statsMap = await fetchVideoStats(videoIds);
 
       data.items.forEach(item => {
-        const id = item.id.videoId;
-        const stats = statsMap[id] || { views: '—', duration: '' };
-        const fillPreviousLive = previousLiveCount < 4;
-        if (fillPreviousLive) {
-          previousLiveCount += 1;
-        }
-        const targetGrid = fillPreviousLive ? previousLiveGrid : grid;
-        targetGrid.appendChild(renderVideoCard({
+          const id = item.contentDetails.videoId;
+          const stats = statsMap[id] || { views: '—', duration: '', hasLiveStreamingDetails: false };
+          
+          const videoObj = {
           id,
           title: item.snippet.title,
           thumb: item.snippet.thumbnails.high.url,
           views: stats.views,
           when: timeAgo(item.snippet.publishedAt),
           duration: stats.duration
-        }));
-      });
+          };
+          
+          if (stats.hasLiveStreamingDetails) {
+            // Videos with liveStreamingDetails go to Previous Live (first 4)
+            if (previousLiveCount < 4) {
+              previousLiveCount += 1;
+              previousLiveGrid.appendChild(renderVideoCard(videoObj));
+            }
+          } else {
+            // Videos without liveStreamingDetails go to Latest videos
+            if (latestVideoCount < latestVideoTarget) {
+              latestVideoCount += 1;
+              grid.appendChild(renderVideoCard(videoObj));
+            }
+          }
+        });
 
-      nextPageToken = data.nextPageToken || "";
+        nextPageToken = data.nextPageToken || null;
+        
+        // If Latest videos is still not full and there are more pages, continue fetching
+        if (latestVideoCount < latestVideoTarget && !nextPageToken) {
+          break;
+        }
+      }
+
       if(!nextPageToken){
         loadMoreBtn.style.display = 'none';
       }
@@ -669,7 +690,10 @@
     }
   }
 
-  loadMoreBtn.addEventListener('click', loadNextPage);
+  loadMoreBtn.addEventListener('click', () => {
+    latestVideoTarget += 8;
+    loadNextPage();
+  });
   checkTwitchStatus();
   loadNextPage();
 </script>
