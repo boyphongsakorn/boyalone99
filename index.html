@@ -410,17 +410,17 @@
             For local testing use parent=localhost.
           -->
           <iframe
-            src="https://player.twitch.tv/?channel=boyalone99&parent=localhost&muted=true"
+            src="https://player.twitch.tv/?channel=boyalone99&parent=pwisetthon.com&muted=true"
             allowfullscreen>
           </iframe>
           <div class="player-overlay-tag">
-            <span class="tag viewers">2,341 watching</span>
+            <span class="tag viewers" id="viewer-count">0 watching</span>
           </div>
         </div>
         <div class="stream-meta">
           <div>
-            <p class="title">Ranked grind to diamond — road to top 500</p>
-            <p class="game">Playing <strong>Valorant</strong> · started 1h 42m ago</p>
+            <p class="title" id="stream-title">Streaming live right now</p>
+            <p class="game" id="stream-game">Playing <strong>Live</strong></p>
           </div>
           <a class="btn btn-twitch" href="https://twitch.tv/BoyAlone99" target="_blank" rel="noopener">Watch on Twitch</a>
         </div>
@@ -519,7 +519,18 @@
   // ============================================================
   // Twitch live/offline check
   // ============================================================
-  async function checkTwitchStatus(){
+  function formatStartedAgo(startedAt){
+    if(!startedAt) return 'just started';
+    const diff = Date.now() - new Date(startedAt).getTime();
+    const minutes = Math.max(1, Math.floor(diff / 60000));
+    if(minutes < 60) return `started ${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if(hours < 24) return `started ${hours}h ${minutes % 60}m ago`;
+    const days = Math.floor(hours / 24);
+    return `started ${days}d ago`;
+  }
+
+  function renderOfflineState(){
     const streamFrame = document.getElementById('stream-frame');
     const offlinePanel = document.getElementById('offline-panel');
     const liveBadge = document.getElementById('live-badge');
@@ -527,30 +538,63 @@
     const heroSub = document.getElementById('hero-sub');
     const liveDiv = document.getElementById('live');
 
+    streamFrame.style.display = 'none';
+    offlinePanel.style.display = 'block';
+    liveBadge.style.display = 'none';
+    liveDiv.style.display = 'none';
+    heroTitle.textContent = "Not live right now";
+    heroSub.textContent = "Catch the next stream — follow on Twitch to get notified, or watch the latest videos below.";
+  }
+
+  async function checkTwitchStatus(){
+    const streamFrame = document.getElementById('stream-frame');
+    const offlinePanel = document.getElementById('offline-panel');
+    const liveBadge = document.getElementById('live-badge');
+    const heroTitle = document.getElementById('hero-title');
+    const heroSub = document.getElementById('hero-sub');
+    const liveDiv = document.getElementById('live');
+    const viewerCountEl = document.getElementById('viewer-count');
+    const streamTitleEl = document.getElementById('stream-title');
+    const streamGameEl = document.getElementById('stream-game');
+
     try {
       const res = await fetch(TWITCH_STATUS_URL);
-      const status = (await res.text()).trim().toLowerCase();
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      if(status === "offline"){
-        streamFrame.style.display = 'none';
-        offlinePanel.style.display = 'block';
-        liveBadge.style.display = 'none';
-        heroTitle.textContent = "Not live right now";
-        heroSub.textContent = "Catch the next stream — follow on Twitch to get notified, or watch the latest videos below.";
-        liveDiv.style.display = 'none';
-      } else {
-        streamFrame.style.display = '';
-        offlinePanel.style.display = 'none';
-        liveBadge.style.display = '';
-        liveDiv.style.display = '';
+      const rawText = await res.text();
+      const trimmed = rawText.trim();
+      let data = null;
+
+      if(trimmed){
+        try {
+          data = JSON.parse(trimmed);
+        } catch {
+          data = trimmed.toLowerCase() === 'offline' ? null : null;
+        }
       }
+
+      if(!data || data.type !== 'live'){
+        renderOfflineState();
+        return;
+      }
+
+      const viewerCount = Number(data.viewer_count || 0);
+      const gameName = data.game_name || 'Just Chatting';
+      const title = data.title || 'Streaming live right now';
+      const startedAt = data.started_at;
+
+      streamFrame.style.display = '';
+      offlinePanel.style.display = 'none';
+      liveBadge.style.display = '';
+      liveDiv.style.display = '';
+
+      viewerCountEl.textContent = `${viewerCount.toLocaleString()} watching`;
+      streamTitleEl.textContent = title;
+      streamGameEl.innerHTML = `Playing <strong>${gameName}</strong> · ${formatStartedAgo(startedAt)}`;
+      heroTitle.textContent = title;
+      heroSub.textContent = `${gameName} • ${viewerCount.toLocaleString()} viewers`;
     } catch (err) {
-      streamFrame.style.display = 'none';
-      offlinePanel.style.display = 'block';
-      liveBadge.style.display = 'none';
-      liveDiv.style.display = 'none';
-      heroTitle.textContent = "Not live right now";
-      heroSub.textContent = "Catch the next stream — follow on Twitch to get notified, or watch the latest videos below.";
+      renderOfflineState();
       console.warn('Twitch status check failed:', err);
     }
   }
@@ -631,28 +675,28 @@
     try {
       while (latestVideoCount < latestVideoTarget && nextPageToken !== null) {
         const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${YT_UPLOADS_PLAYLIST_ID}&maxResults=${PAGE_SIZE}&pageToken=${nextPageToken}&key=${YT_API_KEY}`;
-      const res = await fetch(url);
-      const data = await res.json();
+        const res = await fetch(url);
+        const data = await res.json();
 
-      if(!data.items || !data.items.length){
+        if(!data.items || !data.items.length){
           nextPageToken = null;
           break;
-      }
+        }
 
         const videoIds = data.items.map(item => item.contentDetails.videoId);
-      const statsMap = await fetchVideoStats(videoIds);
+        const statsMap = await fetchVideoStats(videoIds);
 
-      data.items.forEach(item => {
+        data.items.forEach(item => {
           const id = item.contentDetails.videoId;
           const stats = statsMap[id] || { views: '—', duration: '', hasLiveStreamingDetails: false };
           
           const videoObj = {
-          id,
-          title: item.snippet.title,
-          thumb: item.snippet.thumbnails.high.url,
-          views: stats.views,
-          when: timeAgo(item.snippet.publishedAt),
-          duration: stats.duration
+            id,
+            title: item.snippet.title,
+            thumb: item.snippet.thumbnails.high.url,
+            views: stats.views,
+            when: timeAgo(item.snippet.publishedAt),
+            duration: stats.duration
           };
           
           if (stats.hasLiveStreamingDetails) {
