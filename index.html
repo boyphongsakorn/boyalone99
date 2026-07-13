@@ -734,6 +734,11 @@
 
           const id = item.contentDetails.videoId;
           const stats = statsMap[id] || { views: '—', duration: '', hasLiveStreamingDetails: false };
+
+          if (stats.hasLiveStreamingDetails) {
+            return;
+          }
+
           const videoObj = {
             id,
             title: item.snippet.title,
