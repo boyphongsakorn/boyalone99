@@ -606,9 +606,12 @@
   const previousLiveGrid = document.getElementById('previous-live-grid');
   const grid = document.getElementById('video-grid');
   const loadMoreBtn = document.getElementById('load-more-btn');
+  const latestSection = document.getElementById('videos');
   let previousLiveCount = 0;
   let latestVideoCount = 0;
   let latestVideoTarget = 8;
+  let latestVideosLoading = false;
+  let latestVideosObserver = null;
 
   function formatViews(n){
     if(n >= 1000000) return (n/1000000).toFixed(1).replace('.0','') + 'M';
@@ -670,7 +673,47 @@
     return map;
   }
 
-  async function loadNextPage(){
+  async function loadPreviousLive(){
+    try {
+      const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${YT_UPLOADS_PLAYLIST_ID}&maxResults=8&key=${YT_API_KEY}`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if(!data.items || !data.items.length){
+        return;
+      }
+
+      const videoIds = data.items.map(item => item.contentDetails.videoId);
+      const statsMap = await fetchVideoStats(videoIds);
+
+      data.items.forEach(item => {
+        if (previousLiveCount >= 4) return;
+
+        const id = item.contentDetails.videoId;
+        const stats = statsMap[id] || { views: '—', duration: '', hasLiveStreamingDetails: false };
+        const videoObj = {
+          id,
+          title: item.snippet.title,
+          thumb: item.snippet.thumbnails.high.url,
+          views: stats.views,
+          when: timeAgo(item.snippet.publishedAt),
+          duration: stats.duration
+        };
+
+        if (stats.hasLiveStreamingDetails) {
+          previousLiveCount += 1;
+          previousLiveGrid.appendChild(renderVideoCard(videoObj));
+        }
+      });
+    } catch (err) {
+      console.warn('YouTube previous live fetch failed:', err);
+    }
+  }
+
+  async function loadLatestVideos(){
+    if (latestVideosLoading) return;
+
+    latestVideosLoading = true;
     loadMoreBtn.textContent = "Loading…";
     try {
       while (latestVideoCount < latestVideoTarget && nextPageToken !== null) {
@@ -687,9 +730,10 @@
         const statsMap = await fetchVideoStats(videoIds);
 
         data.items.forEach(item => {
+          if (latestVideoCount >= latestVideoTarget) return;
+
           const id = item.contentDetails.videoId;
           const stats = statsMap[id] || { views: '—', duration: '', hasLiveStreamingDetails: false };
-          
           const videoObj = {
             id,
             title: item.snippet.title,
@@ -698,25 +742,13 @@
             when: timeAgo(item.snippet.publishedAt),
             duration: stats.duration
           };
-          
-          if (stats.hasLiveStreamingDetails) {
-            // Videos with liveStreamingDetails go to Previous Live (first 4)
-            if (previousLiveCount < 4) {
-              previousLiveCount += 1;
-              previousLiveGrid.appendChild(renderVideoCard(videoObj));
-            }
-          } else {
-            // Videos without liveStreamingDetails go to Latest videos
-            if (latestVideoCount < latestVideoTarget) {
-              latestVideoCount += 1;
-              grid.appendChild(renderVideoCard(videoObj));
-            }
-          }
+
+          latestVideoCount += 1;
+          grid.appendChild(renderVideoCard(videoObj));
         });
 
         nextPageToken = data.nextPageToken || null;
-        
-        // If Latest videos is still not full and there are more pages, continue fetching
+
         if (latestVideoCount < latestVideoTarget && !nextPageToken) {
           break;
         }
@@ -726,20 +758,43 @@
         loadMoreBtn.style.display = 'none';
       }
     } catch (err) {
-      console.warn('YouTube fetch failed:', err);
+      console.warn('YouTube latest videos fetch failed:', err);
       grid.innerHTML = `<p style="color:var(--text-faint); font-size:13px; grid-column:1/-1;">Couldn't load videos — check the YT_API_KEY and YT_UPLOADS_PLAYLIST_ID in the script.</p>`;
       loadMoreBtn.style.display = 'none';
     } finally {
+      latestVideosLoading = false;
       loadMoreBtn.textContent = "Load more";
     }
   }
 
+  function startLatestVideosLazyLoad(){
+    if (!latestSection) return;
+
+    if ('IntersectionObserver' in window) {
+      latestVideosObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            latestVideosObserver.disconnect();
+            loadLatestVideos();
+          }
+        });
+      }, { rootMargin: '250px 0px' });
+
+      latestVideosObserver.observe(latestSection);
+      return;
+    }
+
+    loadLatestVideos();
+  }
+
   loadMoreBtn.addEventListener('click', () => {
     latestVideoTarget += 8;
-    loadNextPage();
+    loadLatestVideos();
   });
+
   checkTwitchStatus();
-  loadNextPage();
+  loadPreviousLive();
+  startLatestVideosLazyLoad();
 </script>
 
 </body>
